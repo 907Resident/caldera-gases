@@ -4,6 +4,9 @@ figures/
 # ignore files in misc
 misc/
 
-# ignore data
-pertinent-data/**.xlsx
-pertinent-data/**.csv
+# ignore data files -- only .txt and .keep files can be retained on the remote repo
+pertinent-data/*/*.xlsx
+pertinent-data/*/*.mat
+pertinent-data/*/*.csv
+pertinent-data/*/*.dat
+pertinent-data/*/*.zip
