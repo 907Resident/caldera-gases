@@ -1,0 +1,9 @@
+# ignore figures
+figures/
+
+# ignore files in misc
+misc/
+
+# ignore data
+pertinent-data/
+
