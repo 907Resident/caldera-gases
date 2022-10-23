@@ -10,3 +10,6 @@ pertinent-data/*/*.mat
 pertinent-data/*/*.csv
 pertinent-data/*/*.dat
 pertinent-data/*/*.zip
+
+# ignore the .vscode file
+.vscode
