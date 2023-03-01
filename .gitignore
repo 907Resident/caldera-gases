@@ -14,3 +14,6 @@ pertinent-data/**/*.h5
 
 # ignore the .vscode file
 .vscode
+
+# ignore pycache files
+**/__pycache__
