@@ -21,13 +21,22 @@
 %% Import Data Pre-Proccessed Data
     
 % Create a directory to save files 
-working_dir = "E:\moyoa\Documents\OneDrive - Vanderbilt\PhD_Dissertation\Data_Analysis\Picarro\Yellowstone\Jun2018\20Jun2018\";
+% path for working file
+working_filename = matlab.desktop.editor.getActiveFilename;
+% working_dir = "E:\moyoa\Documents\OneDrive - Vanderbilt\PhD_Dissertation\Data_Analysis\Picarro\Yellowstone\Jun2018\20Jun2018\";
+working_dir = fileparts(working_filename);
+% confirm the program is pointed to the appropriate working directory
+cd(working_filename)
+
+% establish path to relevant datafiles
+data_dir = "../../pertinent-data/pertinent-data/dat-files/yellowstone/20Jun2018";
 
 % Date of measurements
 ddmmmyyyy   = "20Jun2018";
 
 % Data should be imported via "Merge_PicData_Fxn"
- directory  = working_dir+"*.dat";
+%  directory  = working_dir+"*.dat";
+directory = fullfile(data_dir, "*.dat");
 [TT_PicData,PD_mtrx_nm,PD_mtrx_dt, dte] =                               ...
  Merge_PicData_Fxn(directory, 'America/Denver');
         
