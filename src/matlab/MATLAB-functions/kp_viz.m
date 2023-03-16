@@ -2,7 +2,7 @@ function [fig09,fig10] = kp_viz(ChamON_data, nchams,                    ...
                                 KP_Fits,                                ...
                                 KP_coeffs, KP_coeffs_ci,                ...
                                 site_tag, ddmmmyyyy,                    ...
-                                working_dir)
+                                matlab_fig_dir)
 %KP_VIZ Plots Keeling Plot intercepts and an array of full Keeling Plots as
 %regressions
 %   Detailed explanation goes here
@@ -46,9 +46,9 @@ fig09 = figure;
             ylabel('\delta^{13}C-CO_2 (‰)','Interpreter', 'tex')
  
 % Save figure as .fig to working directory
-fi       = sprintf("MATLAB_figs\\%s_%s_CH4_and_CO2_d13C_KP_sig_bar.fig",...
+fi       = sprintf("%s_%s_CH4_and_CO2_d13C_KP_sig_bar.fig",...
                     site_tag, ddmmmyyyy);
-fig_file = working_dir+fi;
+fig_file = fullfile(matlab_fig_dir, fi);
 savefig(fig09, fig_file)
 
 % Visualize Keeling Plots in an array of regressions
@@ -85,7 +85,7 @@ for idx = 1:nchams
             % Title string (to be interated so the proper graph is
             % represented)
             title_str = sprintf(                                        ...
-                       'NGBN STMB %d.%d 12Jun2019 CH_4 Keeling Plot',   ...
+                       '%d.%d CH_4 Keeling Plot',                       ...
                         trans,pnt);
             title(title_str, 'FontSize', 8)
 %--CO2--%
@@ -125,9 +125,9 @@ for idx = 1:nchams
 end
 
 % Save figure as .fig to working directory
-fi       = sprintf("MATLAB_figs\\%s_%s_CH4_and_CO2_d13C_KP_sig_bar.fig",...
+fi       = sprintf("%s_%s_CH4_and_CO2_d13C_KP_sig_bar.fig",...
                     site_tag, ddmmmyyyy);
-fig_file = working_dir+fi;
+fig_file = fullfile(matlab_fig_dir, fi);
 savefig(fig10, fig_file)
 end
 
