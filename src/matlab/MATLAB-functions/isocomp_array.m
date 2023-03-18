@@ -1,13 +1,11 @@
-function [scat_plot, sp] = isocomp_array(iCH4,iCO2,nchams)
+function [scat_plot, sp, iso_array] = isocomp_array(iCH4,iCO2,nchams,    ...
+                                                    varargin)
 %ISOCOMP_ARRAY(iCH4,iCO2,dims)
 %  iCH4:        isotopic composition of methane
 %  iCO2:        isotopic composition of carbon dioxide
-%  S1:          scatter s
-%  C1:          scatter c
-%  dims_row:    number of rows in the array (must be greater than zero)
-%  dims_col:    number of columns in the array (must be greater than zero)
 %  nchams:      number of chamber measurements in the array (cannot exceed
 %               the product of dims_rows and dims_cols
+%  varargin:    Enter if you want the plot zoomed in - "Zoom", "yes"
 %% Plot Isocomps e.g., Whiticar (1999)
 
 % Conditional block for reshaping a > 2D array of isotopic data
@@ -25,12 +23,9 @@ scat_plot       = cell([nchams 1]);
 sp              = cell([nchams 1]);
 
 % Create figure
-%iso_array       = figure;
-fullscreen
+iso_array       = figure('units', 'normalized', 'outerposition', [0 0 1 1]);
 tiles           = tiledlayout('flow');
 for plc         = 1:nchams
-% Create subplot
-%sp{plc}         = subplot(dims_row,dims_col,plc,'Parent',iso_array);
 
 % Create scatter
     % Create vector for color gradient to represent time
@@ -44,23 +39,36 @@ for plc         = 1:nchams
     scat_plot   = scatter(iCH4(1:ce,plc),iCO2(1:ce,plc), 14,            ...
                           cf, 'filled');
         colormap jet
-        % Create the colorbar which will enable the interpretation of the
-        % colored markers on the plot
-        cbar    = colorbar('eastoutside',                               ...
-                           'Ticks', [0 0.5 1.0],                        ...
-                           'TickLabels',{'Beginning','Middle','End'});
-        cbar.Label.String ='Relative Time of Chamber Measurement';
-        % Rotatate the label on the colorbar so that it is legigble
-        set(get(cbar,'Label'),'Rotation', 270.0)
+        % Create colorbar for the last plot in the array
+        if plc == nchams
+            % Create the colorbar which will enable the interpretation of
+            % the colored markers on the plot
+            cbar    = colorbar('eastoutside',                           ...
+                               'Ticks', [0 0.5 1.0],                    ...
+                               'TickLabels',{'Beginning','Middle','End'});
+            cbar.Label.String ='Relative Time of Chamber Measurement';
+            % Rotatate the label on the colorbar so that it is legigble
+            set(get(cbar,'Label'),'Rotation', 270.0)
+        end
         % Set the limits of the x and y axis
-        xlim([-100 -20]), ylim([-50 20])
+        if strcmp(varargin{2}, "yes") == 1
+            xlim_lwr = 5 .* floor(nanmin(iCH4(:,plc)) ./ 5);
+            xlim_upr = 5 .* ceil(nanmax(iCH4(:,plc))  ./ 5);
+            ylim_lwr = 5 .* floor(nanmin(iCO2(:,plc)) ./ 5);
+            ylim_upr = 5 .* ceil(nanmax(iCO2(:,plc))  ./ 5);        
+            xlim([xlim_lwr xlim_upr])
+            ylim([ylim_lwr ylim_upr])
+        else 
+            xlim([-100 -20])
+            ylim([-40   20])
+        end
         % Label the x and y axis
-        xlabel('\delta^{13}C-CH_{4} (‰)','Interpreter','tex', ...
+        xlabel('\delta^{13}C-CH_{4} (‰)','Interpreter','tex',          ...
                'FontSize', 11)
-        ylabel('\delta^{13}C-CO_{2} (‰)','Interpreter','tex', ...
+        ylabel('\delta^{13}C-CO_{2} (‰)','Interpreter','tex',          ...
                'FontSize', 11)
         % Create iterative title string and title the graphs
-        ttl_str = sprintf('\x03B4^{13}C-CO_2 vs \x03B4^{13}C-CH_4 Pt# %d',...
+        ttl_str = sprintf('\x03B4^{13}C-CO_2 vs \x03B4^{13}C-CH_4 Pt# %d', ...
                            plc);
         title(ttl_str,'FontSize',10, 'Interpreter', 'tex')
         
@@ -127,4 +135,3 @@ end
         
 
 end
-
