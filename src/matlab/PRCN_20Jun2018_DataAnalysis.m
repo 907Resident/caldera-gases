@@ -711,7 +711,7 @@ end
 % Visualize the Keeling plots
 [fig09, fig10] = kp_viz(PRCN_ChamON, nchams,                            ...
                         KP_Fits, KP_coeffs, KP_coeffs_ci, site_tag,     ...
-                        ddmmmyyyy, working_dir);
+                        ddmmmyyyy, matlab_fig_dir);
 
 %% Isotope Calculations using "Last 10" Method
 
@@ -1299,8 +1299,8 @@ if writeXL == 1
         writematrix(flx_end_time                     , XL_filename, 'Sheet', export_summary_tabname, 'Range', 'L3');
             % CH4 Linear Flux
         writematrix(lin_flux(:,1,1)                  , XL_filename, 'Sheet', export_summary_tabname, 'Range', 'M3');
-        writematrix(export_lin_flux_CH4_LB           , XL_filename, 'Sheet', export_summary_tabname, 'Range', 'N3');
-        writematrix(export_lin_flux_CH4_UB           , XL_filename, 'Sheet', export_summary_tabname, 'Range', 'O3');
+        writematrix(lin_flux(:,2,1)                  , XL_filename, 'Sheet', export_summary_tabname, 'Range', 'N3');
+        writematrix(lin_flux(:,3,1)                  , XL_filename, 'Sheet', export_summary_tabname, 'Range', 'O3');
             % CH4 Keeling Plot values
         writematrix(export_SUMTAB_d13CH4             , XL_filename, 'Sheet', export_summary_tabname, 'Range', 'P3');
         writematrix(export_SUMTAB_LB_d13CH4          , XL_filename, 'Sheet', export_summary_tabname, 'Range', 'Q3');
