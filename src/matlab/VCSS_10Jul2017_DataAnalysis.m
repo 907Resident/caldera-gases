@@ -9,31 +9,82 @@
 % Metadata File: "...\Valles\10July2017\Picarro_Metadata_10Jul2017.txt"
 
 %% Extra Functions Used in this Script
-    % The following functions that were made by Ajayi, M. Their
-    % documentation should be located in the "Functions" folder under
-    % <"R:/Ayers/FrackingTN/Data/Matlab/Data Analysis">
+    % The following functions that were made by Ajayi, M.
     
-        % lin_regress()
+        % lin_flux_AC()
+        % gas_unit_prep()
         % KeelingCurve()
-        % StatsPlot_lite()
-        % CH4_vs_Time()
-        % CO2_vs_Time()
-        % fullscreen()
+        % last10_iso
+        % isocomp_array()
+        % basic_gas_viz()
+        % kp_viz()
+        % Merge_PicData_Fxn()
         
 %% Import Data Pre-Proccessed Data
 
+% site tag
+site_id = "VCSS_10Jul2017";
+
+% writeXL
+writeXL = 1;
+    
 % Create a directory to save files 
-working_dir = "E:\moyoa\Documents\OneDrive - Vanderbilt\PhD_Dissertation\Data_Analysis\Picarro\Valles\VCSS\10July2017\";
+% path for working file
+working_filename = matlab.desktop.editor.getActiveFilename;
+% working_dir = "E:\moyoa\Documents\OneDrive - Vanderbilt\PhD_Dissertation\Data_Analysis\Picarro\valles\Jun2018\10Jul2017\";
+working_dir = fileparts(working_filename);
+% confirm the program is pointed to the appropriate working directory
+cd(working_dir)
+
+% establish path to relevant datafiles
+data_dir = fullfile(fileparts(fileparts(working_dir)),                  ...
+    "non-pertinent-data/dat-files/valles/VCSS/10Jul2017");
+summary_data_dir = fullfile(fileparts(fileparts(working_dir)),          ...
+    "pertinent-data/summary-data");
+% confirm that the data folder has been added to the searchable path
+addpath(data_dir)
+addpath(summary_data_dir)
+
+% establish directory to store output figures (as .jpeg and .fig)
+% % (a) set them as variables
+% % (b) make them directories if they do not exists
+% % (c) add them to the searchable path
+jpeg_dir = fullfile(data_dir, "JPEG");
+matlab_fig_dir = fullfile(data_dir, "MATLAB_figs");
+
+[jpeg_dir_status, jpeg_dir_msg] = mkdir(fullfile(data_dir, "JPEG"));
+[mfig_dir_status, mfig_dir_msg] = mkdir(fullfile(data_dir, "MATLAB_figs"));
+
+addpath(jpeg_dir)
+addpath(matlab_fig_dir)
+
+
+% confirm that that the functions are added to the searchable path
+addpath(fullfile(working_dir, "MATLAB-functions"))
+
+% import site metadata
+site_metadata = readtable(                                              ...
+    fullfile(summary_data_dir, "site_metadata__caldera_gases.xlsx"));
+site_metadata.pressure_pa = press_by_elev(site_metadata.site_elevation_m);
+
+% import headers
+flux_file_headers_standard = readtable(                                 ...
+    fullfile(summary_data_dir, "headers_site_fluxes.xlsx"),             ...
+    "Sheet","standard");
+flux_file_headers_standard_summary = readtable(                         ...
+    fullfile(summary_data_dir, "headers_site_fluxes.xlsx"),             ...
+    "Sheet","summary");
 
 % Date of measurements
 ddmmmyyyy   = "10Jul2017";
 
 % Data should be imported via "Merge_PicData_Fxn"
- directory  = working_dir+"*.dat";
+%  directory  = working_dir+"*.dat";
+directory = fullfile(data_dir, "*.dat");
 [TT_PicData,PD_mtrx_nm,PD_mtrx_dt, dte] =                               ...
  Merge_PicData_Fxn(directory, 'America/Denver');
-
-%% Gather the VCSS_10Jul2017 Data from the Eosense Matrix 'PD_mtrx'
+        
+%% Gather the VCSS_10Jul2017 Data from the Forerunner Matrix 'PD_mtrx'
 
 % Calculate the relative time for each measurement 
     % Pre-allocate vector for time normalized in milliseconds.
@@ -42,15 +93,15 @@ ddmmmyyyy   = "10Jul2017";
     % Use for-loop to calculate the difference in times between each
     % measurement
     for i = 2:length(TT_PicData.Time)
-            ms(i)       = ms(i-1) +                                     ...
-            ( milliseconds(TT_PicData.Time(i) - TT_PicData.Time(i-1)) );
+            ms(i) = ms(i-1) +                                           ...
+              ( milliseconds(TT_PicData.Time(i) - TT_PicData.Time(i-1)) );
     end
     % Convert milliseconds back to seconds
-    s                   = ms ./ 1E03;
-    VCSS_rel_sec        = s;
+    s             = ms ./ 1E03;
+    VCSS_rel_sec  = s;
     % Add the relative seconds vector to the timetable
-    TT_PicData          = addvars(TT_PicData,VCSS_rel_sec,              ...
-                        'Before','HP_CH4_dry');
+    TT_PicData    = addvars(TT_PicData,VCSS_rel_sec,                    ...
+                           'Before','HP_CH4_dry');
     % Clear extraneous variables
     clearvars ms s
 
@@ -63,26 +114,42 @@ TT_PicData.HP_CH4_dry(TT_PicData.HP_CH4_dry >= 1.00E01)         = NaN;
 TT_PicData.HR_CH4_dry(TT_PicData.HR_CH4_dry >= 1.00E01)         = NaN;
 TT_PicData.HP_d13_CH4(TT_PicData.HP_d13_CH4 >= 1.00E06)         = NaN;
 TT_PicData.CO2_dry(TT_PicData.CO2_dry       >= 2.50E03)         = NaN;
-TT_PicData.d13_CO2(TT_PicData.d13_CO2       >= 1.00E06)         = NaN;                             
+TT_PicData.d13_CO2(TT_PicData.d13_CO2       >= 1.00E06)         = NaN;    
 
 %% Incorporate User Options
 
-writeXL = input('Enter ''1'' to write main variables to an Excel file, enter zero if no Excel files are to be wrtitten: ');
+% writeXL = input('Enter ''1'' to write main variables to an Excel file, enter zero if no Excel files are to be wrtitten: ');
+% % State how many times the eosAC cycled (opened and closed) during the
+% % long-term measurement
+%   % This will help to separate each closed chamber period during
+%   % that measurement session
+% nchams  = input('Enter the number of points measured at this site (reponses must be greater than zero): ');
+%     if nchams <= 0
+%        error('Please select a value greater than zero')
+%     elseif mod(nchams,1) ~= 0
+%         error('Please select an interger value')
+%     end
+% % Request a Site Tag to distinguish location from others
+% site_tag = input('Enter the four letter (all CAPS) code for the site you are analyzing: ', "s");
+%     % Ensure that the string is all upper case
+%     site_tag = upper(site_tag);  
+
+%% Incorporate sie metadata
+
+% find the correct row to use in the site_metadata table
+metadata = site_metadata(matches(site_metadata.site_date, site_id), :);
+
 % State how many times the eosAC cycled (opened and closed) during the
 % long-term measurement
   % This will help to separate each closed chamber period during
   % that measurement session
-nchams  = input('Enter the number of points measured at this site (reponses must be greater than zero): ');
-    if nchams <= 0
-       error('Please select a value greater than zero')
-    elseif mod(nchams,1) ~= 0
-        error('Please select an interger value')
-    end
+nchams = metadata.nchams;
+
 % Request a Site Tag to distinguish location from others
-site_tag = input('Enter the four letter (all CAPS) code for the site you are analyzing: ', "s");
-    % Ensure that the string is all upper case
-    site_tag = upper(site_tag);       
-        
+site_tag = metadata.site_tag;
+% Ensure that the string is all upper case
+site_tag = upper(char(site_tag));  
+    
 %%  Get Rid of the Duplicate Measurement Values
     % In some instances, users of the Picarro have observed duplicate
     % measurements. That is, measurements over 1-3 seconds that are exactly
@@ -102,7 +169,7 @@ end
     % Create a new matrix that will contain the desired measurements and
     % the keep/delete indicator by horizontally concatenating RN to the
     % measurement vectors
-RN_CH4 = [RN, datenum(TT_PicData.Time), VCSS_rel_sec          ...
+RN_CH4 = [RN, datenum(TT_PicData.Time), VCSS_rel_sec                    ...
          TT_PicData.HP_CH4_dry,         TT_PicData.HR_CH4_dry,          ...
          TT_PicData.HP_d13_CH4,         TT_PicData.HR_d13_CH4           ... 
          TT_PicData.CO2_dry,            TT_PicData.d13_CO2,             ...
@@ -118,16 +185,16 @@ end
 RN_CH4(any(isnan(RN_CH4),2),:)  = [];
     % Create a new vector that converts the edited time serial numbers to
     % datetime objects
-Time                            = datestr(RN_CH4(:,2), -1);
-Time                            = datetime(Time);
+Time                         = datestr(RN_CH4(:,2), -1);
+Time                         = datetime(Time);
 
 % Reassign the variables so that they represent the filtered information
     % Set up variables names
     VariableNames = {'Rel_Sec', 'HP_CH4_dry', 'HR_CH4_dry', 'HP_d13_CH4',  ...
                      'HR_d13_CH4', 'CO2_dry', 'd13_CO2', 'Alarm_Status'};
     % Recreate Timetable with pared down data, now called
-    % *TT_VCSS_10Jul2017*
-    TT_VCSS = timetable(Time, RN_CH4(:,03),  RN_CH4(:,04),    ...
+    % *TT_VCSS*
+    TT_VCSS       = timetable(Time, RN_CH4(:,03),  RN_CH4(:,04),        ...
                            RN_CH4(:,05), RN_CH4(:,06), RN_CH4(:,07),    ...
                            RN_CH4(:,08), RN_CH4(:,09), RN_CH4(:,10),    ...
                           'VariableNames', VariableNames);
@@ -151,9 +218,8 @@ subplot(1,2,2)
         ylabel('[CO_2] (ppm)')
         grid on
 % Save figure as .fig to working directory
-fi       = sprintf("MATLAB_figs\\%s_%s_CH4_and_CO2_timeline_side-by-side.fig", ...
-                    site_tag, ddmmmyyyy);
-fig_file = working_dir+fi;
+fi       = sprintf("%s_CH4_and_CO2_timeline_side-by-side.fig", site_id);
+fig_file = fullfile(matlab_fig_dir, fi);
 savefig(fig01, fig_file)
 
 %------Figure 02-------%
@@ -184,9 +250,9 @@ yyaxis right
                     legend({'[CH_4]', '[CO_2]'}, 'EdgeColor', 'none',   ...
                             'Color','none', 'Location', 'Best')
 % Save figure as .fig to working directory
-fi       = sprintf("MATLAB_figs\\%s_%s_CH4_and_CO2_timeline_overlay.fig",  ...
-                    site_tag, ddmmmyyyy);
-fig_file = working_dir+fi;
+fi       = sprintf("%s_CH4_and_CO2_timeline_overlay.fig", site_id);
+
+fig_file = fullfile(matlab_fig_dir, fi);
 savefig(fig02, fig_file)  
 
 % Clear extraneous variables

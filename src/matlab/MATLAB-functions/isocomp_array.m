@@ -1,5 +1,5 @@
-function [scat_plot, sp, iso_array] = isocomp_array(iCH4,iCO2,nchams,    ...
-                                                    varargin)
+function [scat_plot, sp, iso_array] = isocomp_array( ...
+    iCH4,iCO2,nchams, varargin)
 %ISOCOMP_ARRAY(iCH4,iCO2,dims)
 %  iCH4:        isotopic composition of methane
 %  iCO2:        isotopic composition of carbon dioxide
