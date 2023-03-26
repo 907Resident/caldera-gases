@@ -35,11 +35,14 @@ working_dir = "/Users/moyoajayi/Library/CloudStorage/GoogleDrive-moyo.ajayi@gmai
 ddmmmyyyy   = "25May2019";
 
 % Path containing zipped h5 files: zip_h5_path
-zip_h5_path      = working_dir+"zipped_data\";
+zip_h5_path      = working_dir+"zipped_data/";
 % Path to store unzipped h5 files: unzipped_h5_path
-unzipped_h5_path = working_dir+"h5_files\";
+unzipped_h5_path = working_dir+"h5_files/";
 % Data should be imported via "Merge_PicData_Fxn"
-TT_PicData       = PicData_h5_to_csv(zip_h5_path, unzipped_h5_path, 2019);
+% note: set the final argument to 'true' if the data does *not* to be
+% unzipped and already exists in the directory under the 'unzipped_h5_path'
+TT_PicData       = PicData_h5_to_TT(                                    ...
+    zip_h5_path, unzipped_h5_path, 2019, false);
 % Add one hour to time stamps (due to year-round MST being used on the
 % machine)
 TT_PicData.Time  = TT_PicData.Time + hours(1);
