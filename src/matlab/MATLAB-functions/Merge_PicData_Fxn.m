@@ -68,6 +68,7 @@ PD_mtrx_nm = [];
 disp('Starting concatenation ...')
 
 for i = 1:Nfiles
+    fprintf("... Importing: %s\n", D(i).name)
 % Start the timer to show the length of time needed to process .dat
 % file
     tic

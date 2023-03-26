@@ -59,7 +59,6 @@ matlab_fig_dir = fullfile(data_dir, "MATLAB_figs");
 addpath(jpeg_dir)
 addpath(matlab_fig_dir)
 
-
 % confirm that that the functions are added to the searchable path
 addpath(fullfile(working_dir, "MATLAB-functions"))
 
@@ -313,7 +312,7 @@ PostBack_Times(:,2)             = datetime(                             ...
     % from a timetable to a multidimensional array
 
     VCSS_PreBack    = NaN([115, width(TT_VCSS)+1, nchams]); 
-    VCSS_ChamON     = NaN([400, width(TT_VCSS)+1, nchams]);
+    VCSS_ChamON     = NaN([500, width(TT_VCSS)+1, nchams]);
     VCSS_PostBack   = NaN([115, width(TT_VCSS)+1, nchams]);
     
 for i = 1:nchams
