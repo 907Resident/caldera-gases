@@ -334,7 +334,7 @@ PostBack_Times(:,2)             = DATE + timeofday(PostBack_Times(:,2));
     % from a timetable to a multidimensional array
 
     DISY_PreBack    = NaN([115, width(TT_DISY)+1, nchams]); 
-    DISY_ChamON     = NaN([400, width(TT_DISY)+1, nchams]);
+    DISY_ChamON     = NaN([525, width(TT_DISY)+1, nchams]);
     DISY_PostBack   = NaN([115, width(TT_DISY)+1, nchams]);
     
 for i = 1:nchams

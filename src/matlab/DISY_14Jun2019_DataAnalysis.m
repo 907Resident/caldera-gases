@@ -306,6 +306,13 @@ ChamON_Times(:,2)               = DATE + timeofday(ChamON_Times(:,2));
     
     % Clear extraneous variables
     clearvars DATE
+
+%----PostBack----%
+    % No post background data needed here; the pre background is used as
+    % pre and post for these continuous measurements
+    
+    % Clear extraneous variables
+    clearvars DATE
     
 %% Extract the individual measurement
     % Use the start and end time from the previous section, use the
@@ -313,7 +320,7 @@ ChamON_Times(:,2)               = DATE + timeofday(ChamON_Times(:,2));
     % from a timetable to a multidimensional array
 
     DISY_PreBack    = NaN([115, width(TT_DISY)+1, nchams]); 
-    DISY_ChamON     = NaN([400, width(TT_DISY)+1, nchams]);
+    DISY_ChamON     = NaN([500, width(TT_DISY)+1, nchams]);
     DISY_PostBack   = NaN([115, width(TT_DISY)+1, nchams]);
     
 for i = 1:nchams
@@ -364,20 +371,20 @@ for i = 1:nchams
     % Clear extra variables
     clearvars T A dnum m n dmy_diff
     
-    % PostBack
-    S_Post      = timerange(PostBack_Times(i,1), PostBack_Times(i,2),   ...
-                           'closed');
-    T           = TT_DISY(S_Post,:);
-    A           = NaN([height(T), width(T)+1]);
-    dnum        = datenum(T.Time);
-    A(:,1)      = dnum;
-    A(:,2:end)  = table2array(T);
-   [m, n]       = size(A);
-    
-    DISY_PostBack(1:m,1:n,i) = A;
-    
-    % Clear extra variables
-    clearvars T A dnum m n
+%     % PostBack
+%     S_Post      = timerange(PostBack_Times(i,1), PostBack_Times(i,2),   ...
+%                            'closed');
+%     T           = TT_DISY(S_Post,:);
+%     A           = NaN([height(T), width(T)+1]);
+%     dnum        = datenum(T.Time);
+%     A(:,1)      = dnum;
+%     A(:,2:end)  = table2array(T);
+%    [m, n]       = size(A);
+%     
+%     DISY_PostBack(1:m,1:n,i) = A;
+%     
+%     % Clear extra variables
+%     clearvars T A dnum m n
 end
 
 %% Extract  datetimes
@@ -1019,6 +1026,9 @@ for i = 1:nchams
     plot(xi, f)
     hold on
         % Post-Background
+    if nnz(~isnan(DISY_PostBack(:,3,i))) <= 10
+       continue
+    end
     [f, xi, bw_post] = ksdensity(DISY_PostBack(:,3,i));
     plot(xi, f, '--', 'Color', "#80bfff")
     title("Background [CH_{4}]", "Interpreter", "tex")

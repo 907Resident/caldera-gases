@@ -322,7 +322,7 @@ ChamON_Times(:,2)               = DATE + timeofday(ChamON_Times(:,2));
     % from a timetable to a multidimensional array
 
     NGBN_STMB_PreBack    = NaN([115, width(TT_NGBN_STMB)+1, nchams]); 
-    NGBN_STMB_ChamON     = NaN([400, width(TT_NGBN_STMB)+1, nchams]);
+    NGBN_STMB_ChamON     = NaN([500, width(TT_NGBN_STMB)+1, nchams]);
     NGBN_STMB_PostBack   = NaN([115, width(TT_NGBN_STMB)+1, nchams]);
     
 for i = 1:nchams
