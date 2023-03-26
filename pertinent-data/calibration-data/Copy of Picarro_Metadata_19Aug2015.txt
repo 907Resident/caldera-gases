@@ -1,0 +1,14 @@
+Picarro Metadata
+
+User: Ajayi, Moyo
+Location : Stevenson 5712, Nashville, TN
+General Conditions: Indoor Laboratory
+
+Objective: Use the standard methane gas (Tiso-3, Isometric Instruments) to gauge the precision of the picarro
+at a first order.  
+
+Comments: The instrument was run using laboratory conditions from roughly 14:00 until 14:35.  At 14:35,
+the first attempt to measure the standard was made.  However, in high-precision mode (HP) the picarro issued an
+alarm.  After examining the measurements in high-range (HR) it was determined that HR should be used to measure
+the standard.  At roughly 15:02, continuous measuring of the Tiso-3 standard was made until 15:18. Following
+the measurement of the standard, the Picarro returned to measuring the laboratory air until roughly 15:30.  

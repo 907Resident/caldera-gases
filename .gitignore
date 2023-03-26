@@ -12,5 +12,12 @@ pertinent-data/**/*.dat
 pertinent-data/**/*.zip
 pertinent-data/**/*.h5
 
+# ignore the non-pertinent-data directory -- except for the .keep file to main directory structure
+!non-pertinent-data/.keep
+non-pertinent-data/
+
 # ignore the .vscode file
 .vscode
+
+# ignore pycache files
+**/__pycache__
