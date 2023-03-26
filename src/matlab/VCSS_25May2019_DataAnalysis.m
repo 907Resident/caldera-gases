@@ -29,7 +29,7 @@
 %% Import Data Pre-Proccessed Data
     
 % Create a directory to save files 
-working_dir = "E:\moyoa\Documents\OneDrive - Vanderbilt\PhD_Dissertation\Data_Analysis\Picarro\Valles\VCSS\25May2019\";
+working_dir = "/Users/moyoajayi/Library/CloudStorage/GoogleDrive-moyo.ajayi@gmail.com/My Drive/Colab Notebooks/caldera-gases/non-pertinent-data/dat-files/valles/VCSS/25May2019/";
 
 % Date of measurements
 ddmmmyyyy   = "25May2019";

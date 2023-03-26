@@ -12,6 +12,7 @@
     % The following functions that were made by Ajayi, M.
     
         % lin_flux_AC()
+        % gas_unit_prep()
         % KeelingCurve()
         % last10_iso
         % isocomp_array()
@@ -20,19 +21,70 @@
         % Merge_PicData_Fxn()
         
 %% Import Data Pre-Proccessed Data
+
+% site tag
+site_id = "VCHB_26May2019";
+
+% writeXL
+writeXL = 1;
     
 % Create a directory to save files 
-working_dir = "E:\moyoa\Documents\OneDrive - Vanderbilt\PhD_Dissertation\Data_Analysis\Picarro\Valles\VCHB\";
+% path for working file
+working_filename = matlab.desktop.editor.getActiveFilename;
+% working_dir = "E:\moyoa\Documents\OneDrive - Vanderbilt\PhD_Dissertation\Data_Analysis\Picarro\valles\Jun2018\26May2019\";
+working_dir = fileparts(working_filename);
+% confirm the program is pointed to the appropriate working directory
+cd(working_dir)
+
+% establish path to relevant datafiles
+data_dir = fullfile(fileparts(fileparts(working_dir)),                  ...
+    "non-pertinent-data/dat-files/valles/VCHB/26May2019");
+summary_data_dir = fullfile(fileparts(fileparts(working_dir)),          ...
+    "pertinent-data/summary-data");
+% confirm that the data folder has been added to the searchable path
+addpath(data_dir)
+addpath(summary_data_dir)
+
+% establish directory to store output figures (as .jpeg and .fig)
+% % (a) set them as variables
+% % (b) make them directories if they do not exists
+% % (c) add them to the searchable path
+jpeg_dir = fullfile(data_dir, "JPEG");
+matlab_fig_dir = fullfile(data_dir, "MATLAB_figs");
+
+[jpeg_dir_status, jpeg_dir_msg] = mkdir(fullfile(data_dir, "JPEG"));
+[mfig_dir_status, mfig_dir_msg] = mkdir(fullfile(data_dir, "MATLAB_figs"));
+
+addpath(jpeg_dir)
+addpath(matlab_fig_dir)
+
+
+% confirm that that the functions are added to the searchable path
+addpath(fullfile(working_dir, "MATLAB-functions"))
+
+% import site metadata
+site_metadata = readtable(                                              ...
+    fullfile(summary_data_dir, "site_metadata__caldera_gases.xlsx"));
+site_metadata.pressure_pa = press_by_elev(site_metadata.site_elevation_m);
+
+% import headers
+flux_file_headers_standard = readtable(                                 ...
+    fullfile(summary_data_dir, "headers_site_fluxes.xlsx"),             ...
+    "Sheet","standard");
+flux_file_headers_standard_summary = readtable(                         ...
+    fullfile(summary_data_dir, "headers_site_fluxes.xlsx"),             ...
+    "Sheet","summary");
 
 % Date of measurements
 ddmmmyyyy   = "26May2019";
 
 % Data should be imported via "Merge_PicData_Fxn"
- directory  = working_dir+"*.dat";
+%  directory  = working_dir+"*.dat";
+directory = fullfile(data_dir, "*.dat");
 [TT_PicData,PD_mtrx_nm,PD_mtrx_dt, dte] =                               ...
  Merge_PicData_Fxn(directory, 'America/Denver');
-
-%% Gather the VCHB_26May2019 Data from the Eosense Matrix 'PD_mtrx'
+        
+%% Gather the VCHB_26May2019 Data from the Forerunner Matrix 'PD_mtrx'
 
 % Calculate the relative time for each measurement 
     % Pre-allocate vector for time normalized in milliseconds.
@@ -41,18 +93,18 @@ ddmmmyyyy   = "26May2019";
     % Use for-loop to calculate the difference in times between each
     % measurement
     for i = 2:length(TT_PicData.Time)
-            ms(i)       = ms(i-1) +                                     ...
-            ( milliseconds(TT_PicData.Time(i) - TT_PicData.Time(i-1)) );
+            ms(i) = ms(i-1) +                                           ...
+              ( milliseconds(TT_PicData.Time(i) - TT_PicData.Time(i-1)) );
     end
     % Convert milliseconds back to seconds
-    s                   = ms ./ 1E03;
-    VCHB_rel_sec        = s;
+    s             = ms ./ 1E03;
+    VCHB_rel_sec  = s;
     % Add the relative seconds vector to the timetable
-    TT_PicData          = addvars(TT_PicData,VCHB_rel_sec,              ...
-                                 'Before','HP_CH4_dry');
+    TT_PicData    = addvars(TT_PicData,VCHB_rel_sec,                    ...
+                           'Before','HP_CH4_dry');
     % Clear extraneous variables
     clearvars ms s
-    
+
 %% Spec Check
     % Ensure that measurements are not outside of the Picarro specs (e.g.
     % [CH4] <= 10 ppm & [CO2] <= 2500 ppm)
@@ -62,37 +114,41 @@ TT_PicData.HP_CH4_dry(TT_PicData.HP_CH4_dry >= 1.00E01)         = NaN;
 TT_PicData.HR_CH4_dry(TT_PicData.HR_CH4_dry >= 1.00E01)         = NaN;
 TT_PicData.HP_d13_CH4(TT_PicData.HP_d13_CH4 >= 1.00E06)         = NaN;
 TT_PicData.CO2_dry(TT_PicData.CO2_dry       >= 2.50E03)         = NaN;
-TT_PicData.d13_CO2(TT_PicData.d13_CO2       >= 1.00E06)         = NaN;                             
+TT_PicData.d13_CO2(TT_PicData.d13_CO2       >= 1.00E06)         = NaN;    
 
 %% Incorporate User Options
 
-writeXL = input('Enter ''1'' to write main variables to an Excel file, enter zero if no Excel files are to be wrtitten: ');
+% writeXL = input('Enter ''1'' to write main variables to an Excel file, enter zero if no Excel files are to be wrtitten: ');
+% % State how many times the eosAC cycled (opened and closed) during the
+% % long-term measurement
+%   % This will help to separate each closed chamber period during
+%   % that measurement session
+% nchams  = input('Enter the number of points measured at this site (reponses must be greater than zero): ');
+%     if nchams <= 0
+%        error('Please select a value greater than zero')
+%     elseif mod(nchams,1) ~= 0
+%         error('Please select an interger value')
+%     end
+% % Request a Site Tag to distinguish location from others
+% site_tag = input('Enter the four letter (all CAPS) code for the site you are analyzing: ', "s");
+%     % Ensure that the string is all upper case
+%     site_tag = upper(site_tag);  
+
+%% Incorporate sie metadata
+
+% find the correct row to use in the site_metadata table
+metadata = site_metadata(matches(site_metadata.site_date, site_id), :);
+
 % State how many times the eosAC cycled (opened and closed) during the
 % long-term measurement
   % This will help to separate each closed chamber period during
   % that measurement session
-nchams  = input('Enter the number of points measured at this site (reponses must be greater than zero): ');
-    if nchams <= 0
-       error('Please select a value greater than zero')
-    elseif mod(nchams,1) ~= 0
-        error('Please select an interger value')
-    end
+nchams = metadata.nchams;
+
 % Request a Site Tag to distinguish location from others
-site_tag = input('Enter the four letter (all CAPS) code for the site you are analyzing: ', "s");
-    % Ensure that the string is all upper case
-    site_tag = upper(site_tag);       
-    
-%% Import Temperature Data
-    % Data was collected from NOAA's National Climate Data Center,
-    % specifically the Local Climatological Data product. The station,
-    % WBAN:94173 at Valles Lake [44.54444°, -110.42111°] was used for
-    % this project. The data was reduced using a python script
-
-weather_file = "E:\moyoa\Documents\OneDrive - Vanderbilt\Python\Valles-Python\VCHB_26May2019_Weather.csv";
-Weather_Data = Import_Weather(weather_file);
-
-% Round up datetime on the weather data set
-Weather_Data.DATETIME   = dateshift(Weather_Data.DATETIME, 'start', 'hour');
+site_tag = metadata.site_tag;
+% Ensure that the string is all upper case
+site_tag = upper(char(site_tag));  
     
 %%  Get Rid of the Duplicate Measurement Values
     % In some instances, users of the Picarro have observed duplicate
@@ -129,8 +185,8 @@ end
 RN_CH4(any(isnan(RN_CH4),2),:)  = [];
     % Create a new vector that converts the edited time serial numbers to
     % datetime objects
-Time                            = datestr(RN_CH4(:,2), -1);
-Time                            = datetime(Time);
+Time                         = datestr(RN_CH4(:,2), -1);
+Time                         = datetime(Time);
 
 % Reassign the variables so that they represent the filtered information
     % Set up variables names
@@ -138,7 +194,7 @@ Time                            = datetime(Time);
                      'HR_d13_CH4', 'CO2_dry', 'd13_CO2', 'Alarm_Status'};
     % Recreate Timetable with pared down data, now called
     % *TT_VCHB*
-    TT_VCHB = timetable(Time, RN_CH4(:,03),  RN_CH4(:,04),    ...
+    TT_VCHB       = timetable(Time, RN_CH4(:,03),  RN_CH4(:,04),        ...
                            RN_CH4(:,05), RN_CH4(:,06), RN_CH4(:,07),    ...
                            RN_CH4(:,08), RN_CH4(:,09), RN_CH4(:,10),    ...
                           'VariableNames', VariableNames);
@@ -162,9 +218,8 @@ subplot(1,2,2)
         ylabel('[CO_2] (ppm)')
         grid on
 % Save figure as .fig to working directory
-fi       = sprintf("MATLAB_figs\\%s_%s_CH4_and_CO2_timeline_side-by-side.fig", ...
-                    site_tag, ddmmmyyyy);
-fig_file = working_dir+fi;
+fi       = sprintf("%s_CH4_and_CO2_timeline_side-by-side.fig", site_id);
+fig_file = fullfile(matlab_fig_dir, fi);
 savefig(fig01, fig_file)
 
 %------Figure 02-------%
@@ -195,9 +250,9 @@ yyaxis right
                     legend({'[CH_4]', '[CO_2]'}, 'EdgeColor', 'none',   ...
                             'Color','none', 'Location', 'Best')
 % Save figure as .fig to working directory
-fi       = sprintf("MATLAB_figs\\%s_%s_CH4_and_CO2_timeline_overlay.fig",  ...
-                    site_tag, ddmmmyyyy);
-fig_file = working_dir+fi;
+fi       = sprintf("%s_CH4_and_CO2_timeline_overlay.fig", site_id);
+
+fig_file = fullfile(matlab_fig_dir, fi);
 savefig(fig02, fig_file)  
 
 % Clear extraneous variables
@@ -275,14 +330,14 @@ PostBack_Times(9,:) = NaT;
     % Clear extraneous variables
     clearvars DATE
     
-%% Extract the Individual Measurement
+%% Extract the individual measurement
     % Use the start and end time from the previous section, use the
     % TIMERANGE() function to isolate the data.  Then transfer the results
     % from a timetable to a multidimensional array
 
-    VCHB_PreBack    = NaN([100, width(TT_VCHB)+1, nchams]);
-    VCHB_ChamON     = NaN([420, width(TT_VCHB)+1, nchams]);
-    VCHB_PostBack   = NaN([100, width(TT_VCHB)+1, nchams]);
+    VCHB_PreBack    = NaN([115, width(TT_VCHB)+1, nchams]); 
+    VCHB_ChamON     = NaN([500, width(TT_VCHB)+1, nchams]);
+    VCHB_PostBack   = NaN([115, width(TT_VCHB)+1, nchams]);
     
 for i = 1:nchams
     % PreBack
@@ -348,7 +403,7 @@ for i = 1:nchams
     clearvars T A dnum m n
 end
 
-%% Extract Datetimes
+%% Extract  datetimes
 
     % PreBack
         % Pre-allocate
@@ -361,7 +416,7 @@ end
 
     % ChamON
         % Pre-allocate
-    VCHB_ChamON_DateTimes           = NaT([200 1 nchams]);
+    VCHB_ChamON_DateTimes           = NaT([400 1 nchams]);
 for idx = 1:nchams
     f                               = find(isnan(VCHB_ChamON(:,1,idx)));
     VCHB_ChamON_DateTimes(1:min(f)-1,1,idx)    = datetime(              ...
@@ -380,46 +435,15 @@ end
 % Delete Extraneous Variables
 clearvars S_Pre S_ChamON S_Post 
 
-%% Spec Check
-    % Ensure that measurements are not outside of the Picarro specs (e.g.
-    % [CH4] <= 10 ppm & [CO2] <= 2500 ppm)
-
-% CH4 Spec Check
-for sp_idx = 1:nchams
-    CH4_Sp_Chk = find(VCHB_ChamON(:,3,sp_idx) > 10);
-    if  any(CH4_Sp_Chk)
-        VCHB_ChamON(CH4_Sp_Chk,3,sp_idx) = NaN;
-        VCHB_ChamON(CH4_Sp_Chk,5,sp_idx) = NaN;
-    else
-        Spec_Chk_str = sprintf('There were no [CH4] measurements greater than 10 ppm for measurement number %d.', ...
-                                                                   sp_idx);
-        disp(Spec_Chk_str)                                                       
-    end
-end
-
-% CO2 Spec Check
-for sp_idx = 1:nchams
-    CO2_Sp_Chk = find(VCHB_ChamON(:,7,sp_idx) > 2500);
-    if  any(CO2_Sp_Chk)
-        VCHB_ChamON(CO2_Sp_Chk,7:8,sp_idx) = NaN;
-    else
-        Spec_Chk_str = sprintf('There were no [CO2] measurements greater than 2500 ppm for measurement number %d.', ...
-                                                                   sp_idx);
-        disp(Spec_Chk_str)                                                       
-    end
-end
-
-clearvars CH4_Sp_Chk CO2_Sp_Chk sp_idx
-
 %% Prelinary Visualizations
 
 [fig03, fig04, fig05] = basic_gas_viz(VCHB_ChamON, nchams, site_tag,    ...
                                ddmmmyyyy, working_dir);
 
 % Save figure 03 as .fig to working directory
-fi       = sprintf("%s_%s_CH4_and_CO2_timeline_array.fig",              ...
-                    site_tag, ddmmmyyyy);
-fig_file = working_dir+fi;
+fi       = sprintf("%s_CH4_and_CO2_timeline_array.fig",                 ...
+                    site_tag);
+fig_file = fullfile(matlab_fig_dir, fi);
 savefig(fig03, fig_file) 
 % Save Figures 04-05 as .jpg manually or as needed
                            
@@ -427,84 +451,75 @@ savefig(fig03, fig_file)
 clearvars CH4_pl CO2_pl title_str pnt trans
 
 %% Convert gas measurements from ppm tg cgs units
+% % Converting constants
+% Vm                              = 22.71108; % Standard Molar Volume (L)
+% CH4_molec_wt                    = 16.04;    % g/mol
+% CO2_molec_wt                    = 44.01;    % g/mol
+% % Imported concentrations (resampled)
+% c_CH4_ppm                       = VCHB_ChamON(:,3,:);   
+% c_CO2_ppm                       = VCHB_ChamON(:,7,:);
+% % Chameber Height (m)
+%     % 5in = 12.7 cm = 0.127 m
+% H                               = 0.127; 
+% % Number of observations (N)
+% N                               = length(c_CH4_ppm);
+% 
+% %%% To get fluxes, think of concentration expressed in micrograms per cubic
+% %%% meter ug/m3
+%     %%% Convert from ratio of gas to air (ppm) to mass per volume (mg /
+%     %%% m^3)
+%         %%% (Molec_wt / Vm) * ppm = mg / m^3
+%         c_CH4_cgs               = (CH4_molec_wt / Vm) .* c_CH4_ppm;
+%     %%% Convert from mg / L to mg / m3
+%         %%% 1 ug/L = 1000 ug/m3 %%% 
+% %         c_CH4_cgs_UnEx =  1000 .* c_CH4_cgs_UnEx;
+%     %%% Repeat for carbon dioxide     
+%         c_CO2_cgs               = (CO2_molec_wt / Vm) .* c_CO2_ppm;
+% %         c_CO2_cgs_UnEx =  1000 .* c_CO2_cgs_UnEx;
+% 
+% % Add the converted cgs concentrations to the main numeric array
+%  for idx = 1:nchams
+%         VCHB_ChamON(:,10,idx)    = c_CH4_cgs(:,1,idx);
+%         VCHB_ChamON(:,11,idx)    = c_CO2_cgs(:,1,idx);
+%  end
+% 
+% % Clear extraneous variables
+% clearvars N Vm CH4_molec_wt CO2_molec_wt c_CH4_cgs_UnEx c_CO2_cgs_UnEx 
+% clearvars c_CH4_ppm c_CO2_ppm
 
-% Converting constants
-    % Standard Molar Volume (L/mol)
-    % Gather the temperature and pressures
-    Temp                        = nanmean(Weather_Data.AmbientTemp);
-    Press                       = nanmean(Weather_Data.Pressure);
-    % Conditional in case of instances where Temp or Press is NaN
-    if isnan(nanmean(Weather_Data.AmbientTemp)) ~= 1 &&                 ...
-       isnan(nanmean(Weather_Data.Pressure))    ~= 1
-      [~,Vm]                    = MolVol(Temp,Press,'C','mbar');
-    else
-        % Standard Molar Volume (mol L^-1)
-        Vm                      = 22.71108;
-    end
-    % g/mol
-CH4_molec_wt                    = 16.043;
-    % g/mol
-CO2_molec_wt                    = 44.009;                                  
-% Imported concentrations (resampled)
-c_CH4_ppm                       = VCHB_ChamON(:,3,:);   
-c_CO2_ppm                       = VCHB_ChamON(:,7,:);
-% Chamber Height (m)
-    % 5in = 12.70 cm = 0.127 m
-H                               = 0.127; 
-% Number of observations (N)
-N                               = length(c_CH4_ppm);
+%% Gas Unit Prep
 
-%%% To get fluxes, think of concentration expressed in micrograms per cubic
-%%% meter ug/m3
-    %%% Convert from ratio of gas to air (ppm) to mass per volume (mg /
-    %%% m^3)
-        %%% (Molec_wt / Vm) * (1000 L / m^3) * ppm = ug / m^3
-        c_CH4_cgs               = ((CH4_molec_wt / Vm) .* 1E03)         ...
-                                    .* c_CH4_ppm;
-        %%%% (ug / m^3) / 1000 = mg / m^3 
-        c_CH4_cgs               = c_CH4_cgs ./ 1E03;
-    %%% Repeat for carbon dioxide     
-        %%% (Molec_wt / Vm) * (1000 L / m^3) * ppm = ug / m^3
-        c_CO2_cgs               = ((CO2_molec_wt / Vm)  .* 1E03)        ...
-                                    .* c_CO2_ppm;
-        %%%% (ug / m^3) / 1000 =  mg / m^3 
-        c_CO2_cgs               = c_CO2_cgs ./ 1E03;        
-
-% Add the converted cgs concentrations to the main numeric array
- for idx = 1:nchams
-        VCHB_ChamON(:,10,idx)    = c_CH4_cgs(:,1,idx);
-        VCHB_ChamON(:,11,idx)    = c_CO2_cgs(:,1,idx);
- end
-
-% Clear extraneous variables
-clearvars N Vm CH4_molec_wt CO2_molec_wt c_CH4_cgs_UnEx c_CO2_cgs_UnEx c_CH4_ppm c_CO2_ppm 
+VCHB_ChamON = gas_unit_prep(VCHB_ChamON, metadata.site_temperature_C, metadata.pressure_pa);
 
 %% Flux Calculation
+
+% height
+H = 0.127;
 
 [lin_flux, lin_mdl, lin_slope, flx_srt_time, flx_end_time, fig06, fig07] = ...
  lin_flux_AC(VCHB_ChamON, "y");
 % Save figure as .fig to working directory
-fi       = sprintf("MATLAB_Figs\\%s_%s_CH4_lin_mdl_array.fig",                       ...
+fi       = sprintf("%s_%s_CH4_lin_mdl_array.fig",                       ...
                     site_tag, ddmmmyyyy);
-fig_file = working_dir+fi;
+fig_file = fullfile(matlab_fig_dir, fi);
 savefig(fig06, fig_file)
 
 % Save figure as .fig to working directory
-fi       = sprintf("MATLAB_Figs\\%s_%s_CO2_lin_mdl_array.fig",                       ...
+fi       = sprintf("%s_%s_CO2_lin_mdl_array.fig",                       ...
                     site_tag, ddmmmyyyy);
-fig_file = working_dir+fi;
+fig_file = fullfile(matlab_fig_dir, fi);
 savefig(fig07, fig_file)
 
 % Save figures as .jpg to working directory
 fi       = sprintf("%s_%s_CH4_lin_mdl_array.jpg",                       ...
                     site_tag, ddmmmyyyy);
-jpg_file = working_dir+fi;
+jpg_file = fullfile(jpeg_dir, fi);
 saveas(fig06, jpg_file)
 
 % Save figure as .jpg to working directory
 fi       = sprintf("%s_%s_CO2_lin_mdl_array.jpg",                       ...
                     site_tag, ddmmmyyyy);
-jpg_file = working_dir+fi;
+jpg_file = fullfile(jpeg_dir, fi);
 saveas(fig07, jpg_file)
     
 %----Exponential Model Analysis----%
@@ -590,14 +605,20 @@ fig08 = figure('units', 'normalized', 'outerposition', [0 0 1 1]);
                            'Color', 'k'); 
         set(eb_flux, 'MarkerFaceColor', "#4da6ff", 'MarkerEdgeColor', 'k'),...
             grid on
+%         if any(abs(exp_flux(:,:,1) - lin_flux(:,:,1)) <= 1E02) == 1
+%             hold on
+%             bar(1:nchams,exp_flux(:,:,1), 0.5, 'FaceColor', 'c')
+%         else
+%             disp('The absolute difference between the exponential and linear models was greater than 100 mg m^-2 hr^-1 for all measuerments of CH4. Reexamine the models.')
+%         end
         tstr = sprintf("%s %s | CH_4 Fluxes", site_tag, ddmmmyyyy);
         title(tstr)
         xlabel('Location')
         ylabel('F_{CH_4} (mg m^{-2} hr^{-1})')
 %       legend({'Linear Model', 'Exponential Model'}, 'Location', 'SW')
         xticks(1:nchams)
-        xticklabels({'1.1.1', '1.1.2', '1.2.1', '1.2.2', '1.3.1', '1.3.2', ...
-                     '1.4.1', '1.4.2', '1.5.1'})
+        xticklabels({'1.1', '1.2', '1.3', '2.1', '2.2', '2.3',          ...
+                     '3.1', '3.2'})
         hold off
         % Density Plot
         nexttile
@@ -617,13 +638,20 @@ fig08 = figure('units', 'normalized', 'outerposition', [0 0 1 1]);
                            'Color', 'k'); 
         set(eb_flux, 'MarkerFaceColor', "#ff66ff", 'MarkerEdgeColor', 'k'),...
             grid on
+%         if any(abs(exp_flux(:,:,2) - lin_flux(:,:,2)) <= 1E02) == 1
+%             hold on
+%             bar(1:nchams,exp_flux(:,:,2), 0.5,                      ...
+%                 'FaceColor', [102/255 0/255 102/255])
+%         else
+%             disp('The absolute difference between the exponential and linear models was greater than 100 mg m^-2 hr^-1 for all measurements of CO2. Reexamine the models.')
+%         end
         tstr = sprintf("%s %s | CO_2 Fluxes", site_tag, ddmmmyyyy);
         title(tstr)
         xlabel('Location')
         ylabel('F_{CO_2} (mg m^{-2} hr^{-1})')
         xticks(1:nchams)
-        xticklabels({'1.1.1', '1.1.2', '1.2.1', '1.2.2', '1.3.1', '1.3.2', ...
-                     '1.4.1', '1.4.2', '1.5.1'})
+        xticklabels({'1.1', '1.2', '1.3', '2.1', '2.2', '2.3',          ...
+                     '3.1', '3.2'})
         % Density Plot
         nexttile
        [f, xi] = ksdensity(lin_flux(:,1,2));
@@ -633,17 +661,16 @@ fig08 = figure('units', 'normalized', 'outerposition', [0 0 1 1]);
        title(tstr)
        grid on        
 % Save figure as .fig to working directory
-fi       = sprintf("MATLAB_figs\\%s_%s_CH4_and_CO2_fluxes_bar.fig",     ...
+fi       = sprintf("%s_%s_CH4_and_CO2_fluxes_bar.fig",     ...
                     site_tag, ddmmmyyyy);
-fig_file = working_dir+fi;                
+fig_file = fullfile(matlab_fig_dir, fi);                
 savefig(fig08, fig_file)
 
 % Save figure as .jpg to working directory
-fi       = sprintf("%s_%s_CH4_and_CO2_fluxes_scatter_and_density.jpg",     ...
+fi       = sprintf("%s_%s_CH4_and_CO2_fluxes_scatter_and_density.jpg",  ...
                     site_tag, ddmmmyyyy);
-fig_file = working_dir+fi;                
+fig_file = fullfile(matlab_fig_dir, fi);                
 saveas(fig08, fig_file)
-
 %% Keeling Plots
     % Keeling plots (originally generated by Keeling (1961(?)) to assess
     % the source of the gas
@@ -658,7 +685,7 @@ for idx = 1:nchams
 %--CH4--%
     % Prepare data for the regression (i.e. remove NaN values, shape the
     % vectors as vertical vectors, etc.) 
-[xData, yData]  = prepareCurveData((1 ./ VCHB_ChamON(:,3,idx)),         ...
+[xData, yData]  = prepareCurveData((1 ./ VCHB_ChamON(:,3,idx)),           ...
                                          VCHB_ChamON(:,5,idx));
     % Set up fittype and options.
 KP_ft = fittype('poly1');
@@ -699,7 +726,8 @@ end
 % Visualize the Keeling plots
 [fig09, fig10] = kp_viz(VCHB_ChamON, nchams,                            ...
                         KP_Fits, KP_coeffs, KP_coeffs_ci, site_tag,     ...
-                        ddmmmyyyy, working_dir);
+                        ddmmmyyyy, matlab_fig_dir);
+
 %% Isotope Calculations using "Last 10" Method
 
 % Calculate the isotopic composition using the "Last 10" method as
@@ -707,17 +735,17 @@ end
 [last10_d13CH4,  last10_d13CO2, fig11] = last10_iso(VCHB_ChamON, "y");
 
 % Save figure as .fig to working directory
-fi       = sprintf("MATLAB_figs\\%s_%s_CH4_and_CO2_d13C_last10_EDA.fig",...
+fi       = sprintf("%s_%s_CH4_and_CO2_d13C_last10_EDA.fig",             ...
                     site_tag, ddmmmyyyy);
-fig_file = working_dir+fi; 
+fig_file = fullfile(matlab_fig_dir, fi); 
 savefig(fig_file)                    
 
 % Save figure as .jpg to working directory
 fi       = sprintf("%s_%s_CH4_and_CO2_d13C_last10_EDA.jpg",             ...
                     site_tag, ddmmmyyyy);
-jpg_file = working_dir+fi;
+jpg_file = fullfile(jpeg_dir, fi);
 saveas(fig11, jpg_file)
-                    
+
 %% Calculate alpha
     % a = [(?13C-CO2 - ?13C-CH4)/1000 ] + 1
     Alpha           = zeros([1,nchams]);
@@ -746,15 +774,15 @@ saveas(fig11, jpg_file)
     [~, ~, iso_array]   = isocomp_array(iCH4, iCO2, nchams, "Zoom", "yes");
     
     % Save figure as .fig to working directory
-    fi       = sprintf("MATLAB_figs\\%s_%s_CH4_and_CO2_d13C_isocomp.fig",  ...
+    fi       = sprintf("%s_%s_CH4_and_CO2_d13C_isocomp.fig",  ...
                         site_tag, ddmmmyyyy);
-    fig_file = working_dir+fi; 
+    fig_file = fullfile(matlab_fig_dir, fi); 
     savefig(iso_array, fig_file)    
     
     % Save figure as .jpg to working directory
     fi       = sprintf("%s_%s_CH4_and_CO2_d13C_isocomp.jpg",            ...
                         site_tag, ddmmmyyyy);
-    jpg_file = working_dir+fi;
+    jpg_file = fullfile(jpeg_dir, fi);
     saveas(iso_array, jpg_file)
     
 %% CO2/CH4 Ratios
@@ -805,9 +833,9 @@ for idx = 1:nchams
 end
 
     % Save figure as .fig to working directory
-    fi       = sprintf("MATLAB_figs\\%s_%s_CH4_and_CO2_ratio_array.fig",...
+    fi       = sprintf("%s_%s_CH4_and_CO2_ratio_array.fig",   ...
                         site_tag, ddmmmyyyy);
-    fig_file = working_dir+fi;
+    fig_file = fullfile(matlab_fig_dir, fi);
     savefig(fig12, fig_file)
 
 %---- Scatter plots of carbon isotopes and CO2-CH4 Ratio ----%
@@ -823,9 +851,7 @@ for i = 1:nchams
      % Create a grid of plots for each chamber measurement
      nexttile
      % Use the SCATTER() function
-     s13 = scatter(X,Y,[],color, 'filled');
-     set(s13, "MarkerEdgeColor", "k")
-     grid on
+     scatter(X,Y,[],color, 'filled')
      % This if-elseif-else block is used to appropriately designate the
      % numerical portion of each title in the array of plots
             if idx     <= nchams
@@ -837,7 +863,7 @@ for i = 1:nchams
             end
             % Title string (to be interated so the proper graph is
             % represented)
-            title_str   = sprintf(                                      ...
+            title_str   = sprintf(                                         ...
             '%s %d.%d %s d^{13}C-CO_2 vs. d^{13}C-CH_4',                ...
              site_tag,trans,pnt,ddmmmyyyy);
              title(title_str, 'FontSize', 8)
@@ -850,15 +876,15 @@ for i = 1:nchams
 end
 
 % Save figure as .fig to working directory
-fi       = sprintf("MATLAB_figs\\%s_%s_CH4-CO2_d13C_ratio_array.fig",   ...
+fi       = sprintf("%s_%s_CH4-CO2_d13C_ratio_array.fig",   ...
                     site_tag, ddmmmyyyy);
-fig_file = working_dir+fi;
+fig_file = fullfile(matlab_fig_dir, fi);
 savefig(fig13, fig_file)
 
 % Save figure as .jpg to working directory
 fi       = sprintf("%s_%s_CH4-CO2_d13C_ratio_array.jpg",                ...
                     site_tag, ddmmmyyyy);
-jpg_file = working_dir+fi;
+jpg_file = fullfile(jpeg_dir, fi);
 saveas(fig13, jpg_file)
 
 %Clear extraneous variables
@@ -936,9 +962,9 @@ for idx = 1:nchams
 end
 
     % Save figure as .fig to working directory
-    fi       = sprintf("MATLAB_figs\\%s_%s_CH4_and_CO2_ratio_array.fig",   ...
+    fi       = sprintf("%s_%s_CH4_and_CO2_ratio_array.fig",   ...
                         site_tag, ddmmmyyyy);
-    fig_file = working_dir+fi; 
+    fig_file = fullfile(matlab_fig_dir, fi); 
     savefig(fig14, fig_file)
 
 % Plot residuals of the surface fit
@@ -971,9 +997,9 @@ for i = 1:nchams
 end
 
 % Save figure as .fig to working directory
-fi       = sprintf("MATLAB_figs\\%s_%s_CH4-CO2_ratio_hist_resids_array.fig",...
+fi       = sprintf("%s_%s_CH4-CO2_ratio_hist_resids_array.fig",...
                     site_tag, ddmmmyyyy);
-fig_file = working_dir+fi;
+fig_file = fullfile(matlab_fig_dir, fi);
 savefig(fig15, fig_file)
 
 %Clear extraneous variables
@@ -1016,7 +1042,9 @@ for i = 1:nchams
     plot(xi, f)
     hold on
         % Post-Background
-    if all(isnan(VCHB_PostBack(:,3,i))) ~= 1        
+        if nnz(~isnan(VCHB_PostBack(:,3,i))) <= 3
+            continue
+        end
     [f, xi, bw_post] = ksdensity(VCHB_PostBack(:,3,i));
     plot(xi, f, '--', 'Color', "#80bfff")
     title("Background [CH_{4}]", "Interpreter", "tex")
@@ -1031,9 +1059,7 @@ for i = 1:nchams
         tb.EdgeColor = "none";
     end
     grid on
-    else
-        continue
-    end
+
         % [CO2]
     nexttile
         % Pre-Background
@@ -1041,29 +1067,24 @@ for i = 1:nchams
     plot(xi, f, 'm')
     hold on
         % Post-Background
-    if all(isnan(VCHB_PostBack(:,3,i))) ~= 1
-        [f, xi, bw_post] = ksdensity(VCHB_PostBack(:,7,i));
-        plot(xi, f, '--', 'Color', "#cc33ff")
-        title("Background [CO_{2}]", "Interpreter", "tex")
-        ylabel("Density"), xlabel("[CO_{2}] (ppm)", "Interpreter", "tex")
-        legend(["Pre-Background", "Post-Background"], "Location", "East")
-            % Add annotation if not running script to be exported MS Excel
-        if writeXL ~= 1
-                % Texboxt annotation
-            tb_str = sprintf("Bandwidth Estimator for Pre-Back = %2.3f \nBandwidth Estimator for Post-Back = %2.3f", bw_pre, bw_post);
-            dim    =[0.7848958,0.8506750,0.144271,0.045691];
-            tb     = annotation('textbox', dim, 'String', tb_str, 'FitBoxToText','on');
-            tb.EdgeColor = "none";
-        end
-    else
-        continue
+    [f, xi, bw_post] = ksdensity(VCHB_PostBack(:,7,i));
+    plot(xi, f, '--', 'Color', "#cc33ff")
+    title("Background [CO_{2}]", "Interpreter", "tex")
+    ylabel("Density"), xlabel("[CO_{2}] (ppm)", "Interpreter", "tex")
+    legend(["Pre-Background", "Post-Background"], "Location", "East")
+        % Add annotation if not running script to be exported MS Excel
+    if writeXL ~= 1
+            % Texboxt annotation
+        tb_str = sprintf("Bandwidth Estimator for Pre-Back = %2.3f \nBandwidth Estimator for Post-Back = %2.3f", bw_pre, bw_post);
+        dim    =[0.7848958,0.8506750,0.144271,0.045691];
+        tb     = annotation('textbox', dim, 'String', tb_str, 'FitBoxToText','on');
+        tb.EdgeColor = "none";
     end
     grid on
 
         % d13CH4
     nexttile
         % Pre-Background
-    if all(isnan(VCHB_PostBack(:,3,i))) ~= 1           
     [f, xi, bw_pre] = ksdensity(VCHB_PreBack(:,5,i));
     plot(xi, f)
     hold on
@@ -1082,9 +1103,7 @@ for i = 1:nchams
         tb.EdgeColor = "none";
     end
     grid on 
-    else
-        continue
-    end
+
         % d13CO2
     nexttile
         % Pre-Background
@@ -1092,7 +1111,6 @@ for i = 1:nchams
     plot(xi, f, 'm')
     hold on
         % Post-Background
-    if all(isnan(VCHB_PostBack(:,3,i))) ~= 1          
     [f, xi, bw_post] = ksdensity(VCHB_PostBack(:,8,i));
     plot(xi, f, '--', 'Color', "#cc33ff")
     title("Background δ^{13}C-CO_{2}", "Interpreter", "tex")
@@ -1107,19 +1125,16 @@ for i = 1:nchams
         tb.EdgeColor = "none";
     end
     grid on
-    else
-        continue
-    end
     
     % Save figure as .fig to working directory
-    file_str = sprintf("MATLAB_figs\\%s_%s_CH4_and_CO2_background_EDA_ncham-%d.fig", ...
+    file_str = sprintf("%s_%s_CH4_and_CO2_background_EDA_ncham-%d.fig", ...
                         site_tag, ddmmmyyyy, i);
-    fig_file = working_dir+file_str;
+    fig_file = fullfile(data_dir, file_str);
     savefig(fig, fig_file)
     % Save figure as .jpg to working directory
     file_str = sprintf("%s_%s_CH4_and_CO2_background_EDA_ncham-%d.jpg", ...
                         site_tag, ddmmmyyyy, i);
-    fig_file = working_dir+file_str;
+    fig_file = fullfile(data_dir, file_str);
     saveas(fig, fig_file)
     
 end
@@ -1130,6 +1145,7 @@ end
 % file to be used by non-MATLAB users who are a part of the project
 
 if writeXL == 1
+   
     for i = 1:nchams
         % Create a string to label the  tab of the excel sheet
             if i               <= nchams
@@ -1141,8 +1157,11 @@ if writeXL == 1
             end
         % Title string (to be interated so the location is by the name
         % of the tab)
-            export_tabname      = sprintf('%s_%d.%d',site_tag,trans,pnt);
+        export_tabname          = sprintf('%s_%d.%d',site_tag,trans,pnt);
         
+        % Acquire headers for the excel sheet
+        headers_standard = table2cell(flux_file_headers_standard);
+
         % Export the chamber datetime objects (must import as strings to
         % allow xlswrite() to work)
         export_ChamON_times     = string(VCHB_ChamON_DateTimes(:,1,i));
@@ -1169,12 +1188,12 @@ if writeXL == 1
         export_KP_coeffs_ci_CH4 = KP_coeffs_ci(:,:,i,1);
         export_KP_coeffs_ci_CO2 = KP_coeffs_ci(:,:,i,2);
         % Export last 10 isotopic composition (error is ± 1σ)
-        export_L10_d13CH4       = last10_d13CH4(i,1);
-        export_L10_d13CH4_LB    = last10_d13CH4(i,1) - last10_d13CH4(i,2);
-        export_L10_d13CH4_UB    = last10_d13CH4(i,1) + last10_d13CH4(i,2);
-        export_L10_d13CO2       = last10_d13CO2(i,1);
-        export_L10_d13CO2_LB    = last10_d13CO2(i,1) - last10_d13CO2(i,2);
-        export_L10_d13CO2_UB    = last10_d13CO2(i,1) + last10_d13CO2(i,2);        
+        export_L10_d13CH4       = last10_d13CH4(:,1);
+        export_L10_d13CH4_LB    = last10_d13CH4(:,1) - last10_d13CH4(:,2);
+        export_L10_d13CH4_UB    = last10_d13CH4(:,1) + last10_d13CH4(:,2);
+        export_L10_d13CO2       = last10_d13CO2(:,1);
+        export_L10_d13CO2_LB    = last10_d13CO2(:,1) - last10_d13CO2(:,2);
+        export_L10_d13CO2_UB    = last10_d13CO2(:,1) + last10_d13CO2(:,2);        
         % Export Pre- and Post-backgound times (import as strings)
         export_PreB_Times       = string(VCHB_PreBack_DateTimes(:,1,i));
         export_PostB_Times      = string(VCHB_PostBack_DateTimes(:,1,i));
@@ -1189,8 +1208,10 @@ if writeXL == 1
         export_PostB_iCO2       = VCHB_PostBack(:,8,i);
         fn                      = sprintf("%s_%s_Measurements.xlsx",    ...
                                             site_tag,ddmmmyyyy);
-        XL_filename             = working_dir+fn;
+        XL_filename             = fullfile(data_dir, fn);
         % Write the data into excel files for each variable
+            % Headers
+        writecell(headers_standard         , XL_filename, 'Sheet', export_tabname, 'Range', 'A1');
             % Datetimes from chamber enclosure period
         writematrix(export_ChamON_times    , XL_filename, 'Sheet', export_tabname, 'Range', 'A3');
             % Pertinent metrics from chamber enclosure period (e.g., [CH4])
@@ -1245,7 +1266,7 @@ if writeXL == 1
         writematrix(export_alpha_Forde19   , XL_filename, 'Sheet', export_tabname, 'Range', 'BG4');
         writematrix(export_thous_ln_alpha  , XL_filename, 'Sheet', export_tabname, 'Range', 'BH3');
         % Message to indicate one tab has been filled in with data
-        msg_str = sprintf('Tab ''%s_%d'' has been created', site_tag, i);
+        msg_str = sprintf('Tab ''VCHB_%d'' has been created', i);
         disp(msg_str)
     end
         disp('All data has been exported to the worksheet')
@@ -1254,6 +1275,9 @@ if writeXL == 1
     
       % Set Summary Tab  name
       export_summary_tabname = 'Summary';
+
+      % Acquire headers for summary sheet
+      headers_summary = table2cell(flux_file_headers_standard_summary);
       % Export Start and End Time of Enclosures
       export_SUMTAB_srt_enclosure_time =                                ...
                  reshape(string(VCHB_ChamON_DateTimes(1,1,:)), [nchams 1]);
@@ -1283,6 +1307,8 @@ if writeXL == 1
         export_SUMTAB_UB_d13CO2 = reshape(KP_coeffs_ci(2,2,:,2), [nchams 1]);
         
         % Write summary data into excel file
+            % Headers
+        writecell(headers_summary                    , XL_filename, 'Sheet', export_summary_tabname, 'Range', 'A1');
             % Total Enclosure Time
         writematrix(export_SUMTAB_srt_enclosure_time , XL_filename, 'Sheet', export_summary_tabname, 'Range', 'H3');
         writematrix(export_SUMTAB_end_enclosure_time , XL_filename, 'Sheet', export_summary_tabname, 'Range', 'I3');
@@ -1298,11 +1324,9 @@ if writeXL == 1
         writematrix(export_SUMTAB_LB_d13CH4          , XL_filename, 'Sheet', export_summary_tabname, 'Range', 'Q3');
         writematrix(export_SUMTAB_UB_d13CH4          , XL_filename, 'Sheet', export_summary_tabname, 'Range', 'R3');
             % CH4 Last 10 Isotopes
-        writematrix(last10_d13CH4(:,1)               , XL_filename, 'Sheet', export_summary_tabname, 'Range', 'S3');
-        writematrix(last10_d13CH4(:,1)-last10_d13CH4(:,2)               ...
-                                                     , XL_filename, 'Sheet', export_summary_tabname, 'Range', 'T3');
-        writematrix(last10_d13CH4(:,1)+last10_d13CH4(:,2)               ...
-                                                     , XL_filename, 'Sheet', export_summary_tabname, 'Range', 'U3');
+        writematrix(export_L10_d13CH4                , XL_filename, 'Sheet', export_summary_tabname, 'Range', 'S3');
+        writematrix(export_L10_d13CH4_LB             , XL_filename, 'Sheet', export_summary_tabname, 'Range', 'T3');
+        writematrix(export_L10_d13CH4_UB             , XL_filename, 'Sheet', export_summary_tabname, 'Range', 'U3');
             % CO2 Linear Flux
         writematrix(lin_flux(:,1,2)                  , XL_filename, 'Sheet', export_summary_tabname, 'Range', 'V3');
         writematrix(lin_flux(:,2,2)                  , XL_filename, 'Sheet', export_summary_tabname, 'Range', 'W3');
@@ -1312,11 +1336,9 @@ if writeXL == 1
         writematrix(export_SUMTAB_LB_d13CO2          , XL_filename, 'Sheet', export_summary_tabname, 'Range', 'Z3');
         writematrix(export_SUMTAB_UB_d13CO2          , XL_filename, 'Sheet', export_summary_tabname, 'Range','AA3');
             % Last 10 CO2 Isotopes
-        writematrix(last10_d13CO2(:,1)               , XL_filename, 'Sheet', export_summary_tabname, 'Range','AB3');
-        writematrix(last10_d13CO2(:,1)-last10_d13CO2(:,2)               ...
-                                                     , XL_filename, 'Sheet', export_summary_tabname, 'Range','AC3');
-        writematrix(last10_d13CO2(:,1)+last10_d13CO2(:,2)               ...
-                                                     , XL_filename, 'Sheet', export_summary_tabname, 'Range','AD3');
+        writematrix(export_L10_d13CO2                , XL_filename, 'Sheet', export_summary_tabname, 'Range','AB3');
+        writematrix(export_L10_d13CO2_LB             , XL_filename, 'Sheet', export_summary_tabname, 'Range','AC3');
+        writematrix(export_L10_d13CO2_UB             , XL_filename, 'Sheet', export_summary_tabname, 'Range','AD3');
                     
         disp('Summary data has been written to excel sheet')
         
@@ -1337,18 +1359,7 @@ clearvars export_SUMTAB_LB_d13CH4 export_SUMTAB_UB_d13CH4
 clearvars export_SUMTAB_d13CO2    export_SUMTAB_LB_d13CO2 
 clearvars export_SUMTAB_UB_d13CO2 export_summary_tabname
 
-clearvars export_L10_d13CH4       export_L10_d13CH4_LB  export_L10_d13CH4_UB
-clearvars export_L10_d13CO2       export_L10_d13CO2_LB  export_L10_d13CO2_UB
-clearvars export_lin_flux_CH4_LB  export_lin_flux_CH4_UB export_lin_flux_CO2_LB
-clearvars export_lin_flux_CO2_UB  export_lin_mdl_CH4
-
-clearvars export_SUMTAB_end_enclosure_time export_SUMTAB_srt_enclosure_time
-
 %% Export a MATFILE
-
-% Add the date to the timetable object to ensure it is discernable from
-% other measurements at VCHB
-TT_VCHB_26May2019 = TT_VCHB;
 
 % Add R-squared values from linear fits to .mat files
  Rsquared_CH4 = NaN([nchams 1]);
@@ -1359,13 +1370,12 @@ for i = 1:nchams
 end
     % This will allow data to be manipulated in other scripts or elsewhere
     % in the MATLAB environment
-    fn_mat   = sprintf("%s_%s_MATFILE.mat", site_tag, ddmmmyyyy);
-    filename = working_dir+fn_mat;
+    fn_mat   = sprintf("%s_%S_MATFILE.mat", site_tag,ddmmmyyyy);
+    filename = fullfile(data_dir, fn_mat);
     save(filename,                                                      ...
                             'VCHB_PreBack_DateTimes' , 'VCHB_PreBack' , ...
                             'VCHB_ChamON_DateTimes'  , 'VCHB_ChamON'  , ...
                             'VCHB_PostBack_DateTimes', 'VCHB_PostBack', ...
-                            'TT_VCHB_26May2019'      ,                  ...
                             'lin_flux'               , 'lin_slope'    , ...
                             'lin_mdl'                ,                  ...
                             'Rsquared_CH4'           , 'Rsquared_CO2' , ...

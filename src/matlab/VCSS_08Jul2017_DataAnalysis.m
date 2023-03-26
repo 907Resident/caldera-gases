@@ -313,7 +313,7 @@ PostBack_Times(:,2)             = datetime(                             ...
     % from a timetable to a multidimensional array
 
     VCSS_PreBack    = NaN([115, width(TT_VCSS)+1, nchams]); 
-    VCSS_ChamON     = NaN([400, width(TT_VCSS)+1, nchams]);
+    VCSS_ChamON     = NaN([500, width(TT_VCSS)+1, nchams]);
     VCSS_PostBack   = NaN([115, width(TT_VCSS)+1, nchams]);
     
 for i = 1:nchams
