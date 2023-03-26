@@ -31,8 +31,21 @@
 % Create a directory to save files 
 working_dir = "/Users/moyoajayi/Library/CloudStorage/GoogleDrive-moyo.ajayi@gmail.com/My Drive/Colab Notebooks/caldera-gases/non-pertinent-data/dat-files/valles/VCSS/25May2019/";
 
+% establisg the summary data directory
+summary_data_dir = "/Users/moyoajayi/Library/CloudStorage/GoogleDrive-moyo.ajayi@gmail.com/My Drive/Colab Notebooks/caldera-gases/pertinent-data/summary-data";
+
+addpath(summary_data_dir)
 % Date of measurements
 ddmmmyyyy   = "25May2019";
+
+% import site metadata
+site_metadata = readtable(                                              ...
+    fullfile(summary_data_dir, "site_metadata__caldera_gases.xlsx"));
+site_metadata.pressure_pa = press_by_elev(site_metadata.site_elevation_m);
+
+% find the correct row to use in the site_metadata table
+metadata = site_metadata(                                               ...
+    matches(site_metadata.site_date, "VCSS_25May2019"), :);
 
 % Path containing zipped h5 files: zip_h5_path
 zip_h5_path      = working_dir+"zipped_data/";
@@ -430,47 +443,50 @@ savefig(fig03, fig_file)
 clearvars CH4_pl CO2_pl title_str pnt trans
 
 %% Convert gas measurements from ppm tg cgs units
+% % Converting constants
+% Vm                              = 22.71108; % Standard Molar Volume (L)
+% CH4_molec_wt                    = 16.04;    % g/mol
+% CO2_molec_wt                    = 44.01;    % g/mol
+% % Imported concentrations (resampled)
+% c_CH4_ppm                       = VCSS_ChamON(:,3,:);   
+% c_CO2_ppm                       = VCSS_ChamON(:,7,:);
+% % Chameber Height (m)
+%     % 5in = 12.7 cm = 0.127 m
+% H                               = 0.127; 
+% % Number of observations (N)
+% N                               = length(c_CH4_ppm);
+% 
+% %%% To get fluxes, think of concentration expressed in micrograms per cubic
+% %%% meter ug/m3
+%     %%% Convert from ratio of gas to air (ppm) to mass per volume (mg /
+%     %%% m^3)
+%         %%% (Molec_wt / Vm) * ppm = mg / m^3
+%         c_CH4_cgs               = (CH4_molec_wt / Vm) .* c_CH4_ppm;
+%     %%% Convert from mg / L to mg / m3
+%         %%% 1 ug/L = 1000 ug/m3 %%% 
+% %         c_CH4_cgs_UnEx =  1000 .* c_CH4_cgs_UnEx;
+%     %%% Repeat for carbon dioxide     
+%         c_CO2_cgs               = (CO2_molec_wt / Vm) .* c_CO2_ppm;
+% %         c_CO2_cgs_UnEx =  1000 .* c_CO2_cgs_UnEx;
+% 
+% % Add the converted cgs concentrations to the main numeric array
+%  for idx = 1:nchams
+%         VCSS_ChamON(:,10,idx)    = c_CH4_cgs(:,1,idx);
+%         VCSS_ChamON(:,11,idx)    = c_CO2_cgs(:,1,idx);
+%  end
+% 
+% % Clear extraneous variables
+% clearvars N Vm CH4_molec_wt CO2_molec_wt c_CH4_cgs_UnEx c_CO2_cgs_UnEx 
+% clearvars c_CH4_ppm c_CO2_ppm
 
-% Converting constants
-Vm                              = 22.71108;  % Standard Molar Volume (mol L^-1)
-CH4_molec_wt                    = 16.043;    % g/mol
-CO2_molec_wt                    = 44.009;    % g/mol
-% Imported concentrations (resampled)
-c_CH4_ppm                       = VCSS_ChamON(:,3,:);   
-c_CO2_ppm                       = VCSS_ChamON(:,7,:);
-% Chamber Height (m)
-    % 5in = 12.70 cm = 0.127 m
-H                               = 0.127; 
-% Number of observations (N)
-N                               = length(c_CH4_ppm);
+%% Gas Unit Prep
 
-%%% To get fluxes, think of concentration expressed in micrograms per cubic
-%%% meter ug/m3
-    %%% Convert from ratio of gas to air (ppm) to mass per volume (mg /
-    %%% m^3)
-        %%% (Molec_wt / Vm) * (1000 L / m^3) * ppm = ug / m^3
-        c_CH4_cgs               = ((CH4_molec_wt / Vm) .* 1E03)         ...
-                                    .* c_CH4_ppm;
-        %%%% (ug / m^3) / 1000 = mg / m^3 
-        c_CH4_cgs               = c_CH4_cgs ./ 1E03;
-    %%% Repeat for carbon dioxide     
-        %%% (Molec_wt / Vm) * (1000 L / m^3) * ppm = ug / m^3
-        c_CO2_cgs               = ((CO2_molec_wt / Vm)  .* 1E03)        ...
-                                    .* c_CO2_ppm;
-        %%%% (ug / m^3) / 1000 =  mg / m^3 
-        c_CO2_cgs               = c_CO2_cgs ./ 1E03;        
-
-% Add the converted cgs concentrations to the main numeric array
- for idx = 1:nchams
-        VCSS_ChamON(:,10,idx)    = c_CH4_cgs(:,1,idx);
-        VCSS_ChamON(:,11,idx)    = c_CO2_cgs(:,1,idx);
- end
-
-% Clear extraneous variables
-clearvars N Vm CH4_molec_wt CO2_molec_wt c_CH4_cgs_UnEx c_CO2_cgs_UnEx
-clearvars c_CH4_ppm c_CO2_ppm 
+VCSS_ChamON = gas_unit_prep(VCSS_ChamON, metadata.site_temperature_C, metadata.pressure_pa);
 
 %% Flux Calculation
+
+% height
+H = 0.127;
 
 [lin_flux, lin_mdl, lin_slope, flx_srt_time, flx_end_time, fig06, fig07] = ...
  lin_flux_AC(VCSS_ChamON, "y");

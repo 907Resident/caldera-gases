@@ -59,7 +59,6 @@ matlab_fig_dir = fullfile(data_dir, "MATLAB_figs");
 addpath(jpeg_dir)
 addpath(matlab_fig_dir)
 
-
 % confirm that that the functions are added to the searchable path
 addpath(fullfile(working_dir, "MATLAB-functions"))
 
