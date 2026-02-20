@@ -1,0 +1,19 @@
+Picarro Metadata 
+
+User: Ajayi, Moyo
+Location: Stevenson 5712, Nashville, TN
+General Conditions: Indoor Laboratory
+
+Objective: Use the zero air gas to analyze the quantity and isotopic composition of its gases, primarily
+carbon dioxide.  We sought to find out if the zero air would be a viable source as a secondary calibration gas.
+
+Started measuring at 11:30 
+>>Measured the laboratory air until 12:02
+Switched to measuring the zero air from 12:03 until 12:09
+>>Lost pressure and had to reconfigure line
+>>>>Restarted measuring zero air at 12:10
+>>Lost pressure again around 12:20/12:23
+>>>>Restarted measuring zero air at 12:25
+
+Looking at the real-time measurements, it appears that the CO2 concentrations are too small to make the
+zero air a viable candidate for a secondary calibration gas. 
