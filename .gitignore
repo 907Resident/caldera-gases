@@ -21,3 +21,6 @@ non-pertinent-data/
 
 # ignore pycache files
 **/__pycache__
+
+# ignore uv virtual environment
+.venv/

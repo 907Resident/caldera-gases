@@ -1,0 +1,25 @@
+[project]
+name = "caldera-gases"
+version = "0.1.0"
+description = "Analysis of diffuse CH4 and CO2 gas emissions from caldera field research (2017-2019)"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "h5py>=3.15.1",
+    "ipython>=9.10.0",
+    "joypy>=0.2.6",
+    "jupyter>=1.1.1",
+    "matplotlib>=3.10.8",
+    "natsort>=8.4.0",
+    "numpy>=2.4.2",
+    "openpyxl>=3.1.5",
+    "pandas>=2.0,<2.3",
+    "probscale>=0.2.5",
+    "pyjanitor<0.30",
+    "scikit-posthocs>=0.12.0",
+    "scipy>=1.17.0",
+    "seaborn>=0.13.2",
+    "statsmodels>=0.14.6",
+    "tqdm>=4.67.3",
+    "utm>=0.8.1",
+]
